@@ -1,0 +1,19 @@
+{
+  "fetchedAt": "2026-06-01T00:00:00Z",
+  "profiles": [
+    {
+      "accountId": "111111111111",
+      "accountName": "Sandbox",
+      "roleName": "AdministratorAccess",
+      "startUrl": "https://example.awsapps.com/start",
+      "region": "us-east-1"
+    },
+    {
+      "accountId": "222222222222",
+      "accountName": "Prod",
+      "roleName": "ReadOnlyAccess",
+      "startUrl": "https://example.awsapps.com/start",
+      "region": "us-east-1"
+    }
+  ]
+}

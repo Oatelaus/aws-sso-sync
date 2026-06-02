@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            ext: tar.gz
+          - goos: linux
+            goarch: arm64
+            ext: tar.gz
+          - goos: darwin
+            goarch: amd64
+            ext: tar.gz
+          - goos: darwin
+            goarch: arm64
+            ext: tar.gz
+          - goos: windows
+            goarch: amd64
+            ext: zip
+          - goos: windows
+            goarch: arm64
+            ext: zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build archive
+        shell: bash
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          EXT: ${{ matrix.ext }}
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME:-dev}"
+          VERSION_NO_V="${VERSION#v}"
+          BINARY="aws-sso-sync"
+          if [[ "$GOOS" == "windows" ]]; then
+            BINARY="${BINARY}.exe"
+          fi
+
+          mkdir -p dist
+          OUT_DIR="dist/${VERSION_NO_V}_${GOOS}_${GOARCH}"
+          mkdir -p "$OUT_DIR"
+
+          CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -trimpath -ldflags "-s -w" -o "$OUT_DIR/$BINARY" .
+
+          ASSET="aws-sso-sync_${VERSION_NO_V}_${GOOS}_${GOARCH}.${EXT}"
+          if [[ "$EXT" == "zip" ]]; then
+            (cd "$OUT_DIR" && zip -q "../$ASSET" "$BINARY")
+          else
+            tar -C "$OUT_DIR" -czf "dist/$ASSET" "$BINARY"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/aws-sso-sync_*.${{ matrix.ext }}
+          if-no-files-found: error
+
+  publish:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          shasum -a 256 aws-sso-sync_* > checksums.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/aws-sso-sync_*
+            dist/checksums.txt
+          generate_release_notes: true

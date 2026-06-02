@@ -1,0 +1,25 @@
+{
+  "name": "example",
+  "enabled": true,
+  "targetFile": "~/.aws/config",
+  "properties": {
+    "Prefix": "global-prefix"
+  },
+  "nameParts": [
+    "{{ .Prefix  }}",
+    "{{ .Environment }}",
+    "{{ .AccountName | sanitize | lower }}",
+    "{{ .RoleName | sanitize | lower }}"
+  ],
+  "separator": ".",
+  "region": "eu-west-1",
+  "startUrl": "https://example.awsapps.com/start",
+  "overrides": [
+    {
+      "matchAlias": "*-integration-*",
+      "properties": {
+        "Environment": "integration"
+      }
+    }
+  ]
+}
