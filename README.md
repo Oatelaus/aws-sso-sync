@@ -3,7 +3,7 @@
 `aws-sso-sync` is a Go CLI that syncs AWS IAM Identity Center (AWS SSO) account roles into managed blocks inside one or more AWS config files.
 
 It supports:
-- Multiple JSON rule files in `configs/`
+- Multiple JSON rule files in `~/.aws-sso-sync/configs/`
 - Template-based profile naming
 - Per-profile overrides using glob matching
 - Safe managed blocks (`# BEGIN/END AWS-SSO-SYNC <name>`)
@@ -12,7 +12,7 @@ It supports:
 
 ## How It Works
 
-1. Load enabled config files from `configs/*.json`.
+1. Load enabled config files from `~/.aws-sso-sync/configs/*.json`.
 2. Build or load a snapshot of available account/role profiles.
 3. Render profile names and properties from your rules.
 4. Replace only the managed block in each target file.
@@ -125,9 +125,11 @@ aws-sso-sync logs
 
 ## Configuration
 
-Config files are loaded from `configs/*.json`.
+Config files are loaded from `~/.aws-sso-sync/configs/*.json`.
 
-Example (`configs/default.json`):
+No config is created automatically. You must create one or more `.json` files yourself.
+
+Example (`~/.aws-sso-sync/configs/default.json`):
 
 ```json
 {
@@ -257,7 +259,7 @@ App data is stored in:
 
 ## Typical Workflow
 
-1. Create/update one or more files in `configs/`.
+1. Create/update one or more `.json` files in `~/.aws-sso-sync/configs/`.
 2. Run:
 
 ```bash
@@ -289,4 +291,4 @@ go run . diff --source sample-snapshot.json
   - Run `sync` first to create `~/.aws-sso-sync/cache.json`.
 
 - `no configuration files found in configs`
-  - Add at least one `.json` rule file under `configs/`.
+  - Add at least one `.json` rule file under `~/.aws-sso-sync/configs/`.

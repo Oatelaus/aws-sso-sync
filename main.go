@@ -27,10 +27,10 @@ func main() {
 }
 
 const (
-	defaultConfigDir = "configs"
-	appDirName       = ".aws-sso-sync"
-	cacheFileName    = "cache.json"
-	logsFileName     = "logs.jsonl"
+	configDirName = "configs"
+	appDirName    = ".aws-sso-sync"
+	cacheFileName = "cache.json"
+	logsFileName  = "logs.jsonl"
 )
 
 type SyncProfile struct {
@@ -115,18 +115,23 @@ func run(args []string) error {
 		return fmt.Errorf("create app data dir: %w", err)
 	}
 
+	configDir, err := resolveConfigDir(appDir)
+	if err != nil {
+		return err
+	}
+
 	cmd := args[0]
 	rest := args[1:]
 
 	switch cmd {
 	case "format":
-		return cmdFormat(appDir)
+		return cmdFormat(appDir, configDir)
 	case "sync":
 		source, err := parseSourceArg(rest)
 		if err != nil {
 			return err
 		}
-		return cmdSync(appDir, source)
+		return cmdSync(appDir, configDir, source)
 	case "diff":
 		source, err := parseSourceArg(rest)
 		if err != nil {
@@ -134,7 +139,7 @@ func run(args []string) error {
 		}
 		return cmdDiff(appDir, source)
 	case "list":
-		return cmdList(defaultConfigDir)
+		return cmdList(configDir)
 	case "logs":
 		return cmdLogs(appDir)
 	case "help", "-h", "--help":
@@ -158,17 +163,17 @@ func parseSourceArg(args []string) (string, error) {
 	return "", errors.New("invalid arguments: expected no args or --source <file>")
 }
 
-func cmdSync(appDir string, sourcePath string) error {
+func cmdSync(appDir string, configDir string, sourcePath string) error {
 	var (
 		snapshot Snapshot
 		err      error
 	)
 
 	if strings.TrimSpace(sourcePath) == "" {
-		if err := ensureEndpointSessionsLoggedIn(defaultConfigDir); err != nil {
+		if err := ensureEndpointSessionsLoggedIn(configDir); err != nil {
 			return err
 		}
-		snapshot, err = buildSnapshotFromAWS(defaultConfigDir)
+		snapshot, err = buildSnapshotFromAWS(configDir)
 		if err != nil {
 			return err
 		}
@@ -183,7 +188,7 @@ func cmdSync(appDir string, sourcePath string) error {
 		return err
 	}
 
-	if err := applyConfigs(snapshot, true); err != nil {
+	if err := applyConfigs(snapshot, true, configDir); err != nil {
 		return err
 	}
 
@@ -191,13 +196,13 @@ func cmdSync(appDir string, sourcePath string) error {
 	return nil
 }
 
-func cmdFormat(appDir string) error {
+func cmdFormat(appDir string, configDir string) error {
 	snapshot, err := loadSnapshotFromFile(filepath.Join(appDir, cacheFileName))
 	if err != nil {
 		return fmt.Errorf("load cached snapshot: %w", err)
 	}
 
-	if err := applyConfigs(snapshot, false); err != nil {
+	if err := applyConfigs(snapshot, false, configDir); err != nil {
 		return err
 	}
 
@@ -343,13 +348,13 @@ func cmdLogs(appDir string) error {
 	return nil
 }
 
-func applyConfigs(snapshot Snapshot, ensureLogin bool) error {
-	files, err := configFiles(defaultConfigDir)
+func applyConfigs(snapshot Snapshot, ensureLogin bool, configDir string) error {
+	files, err := configFiles(configDir)
 	if err != nil {
 		return err
 	}
 	if len(files) == 0 {
-		return fmt.Errorf("no configuration files found in %s", defaultConfigDir)
+		return fmt.Errorf("no configuration files found in %s", configDir)
 	}
 
 	appDir, err := appDataDir()
@@ -1074,6 +1079,15 @@ func appDataDir() (string, error) {
 		return "", err
 	}
 	return filepath.Join(home, appDirName), nil
+}
+
+func resolveConfigDir(appDir string) (string, error) {
+	userConfigDir := filepath.Join(appDir, configDirName)
+	if err := os.MkdirAll(userConfigDir, 0o755); err != nil {
+		return "", fmt.Errorf("create config dir: %w", err)
+	}
+
+	return userConfigDir, nil
 }
 
 func expandHome(path string) (string, error) {
