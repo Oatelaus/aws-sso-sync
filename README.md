@@ -42,13 +42,13 @@ go build -o aws-sso-sync .
 Install from GitHub release assets (auto-detect OS/arch):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/scripts/install.sh | bash -s -- --repo <owner>/<repo>
+curl -fsSL https://raw.githubusercontent.com/Oatelaus/aws-sso-sync/main/scripts/install.sh | bash -s -- --repo Oatelaus/aws-sso-sync
 ```
 
 Install a specific version:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/scripts/install.sh | bash -s -- --repo <owner>/<repo> --version v1.2.3
+curl -fsSL https://raw.githubusercontent.com/Oatelaus/aws-sso-sync/main/scripts/install.sh | bash -s -- --repo Oatelaus/aws-sso-sync --version v1.2.3
 ```
 
 Default install location is `$HOME/.local/bin`.
