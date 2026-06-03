@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -66,6 +65,7 @@ type NameProperty struct {
 
 type RulesConfig struct {
 	Name                string            `json:"name"`
+	SSOName             string            `json:"ssoName,omitempty"`
 	Enabled             bool              `json:"enabled"`
 	TargetFile          string            `json:"targetFile"`
 	NameParts           []string          `json:"nameParts,omitempty"`
@@ -476,7 +476,7 @@ func renderProfiles(cfg RulesConfig, raw []SyncProfile) ([]renderedProfile, erro
 		sessionKey := strings.TrimSpace(effectiveTargetStartURL) + "|" + strings.TrimSpace(effectiveTargetRegion)
 		sessionName, ok := sessionNames[sessionKey]
 		if !ok {
-			sessionName = buildSessionName(cfg.Name, effectiveTargetStartURL, effectiveTargetRegion)
+			sessionName = buildSessionName(fallback(cfg.SSOName, cfg.Name))
 			sessionNames[sessionKey] = sessionName
 		}
 
@@ -665,7 +665,7 @@ func ensureEndpointSessionsLoggedIn(configDir string) error {
 		seen[key] = struct{}{}
 
 		sessions = append(sessions, renderedSession{
-			Name:     buildSessionName(cfg.Name, cfg.StartURL, cfg.Region),
+			Name:     buildSessionName(fallback(cfg.SSOName, cfg.Name)),
 			StartURL: cfg.StartURL,
 			Region:   cfg.Region,
 		})
@@ -770,24 +770,8 @@ func collectSessions(profiles []renderedProfile) []renderedSession {
 	return out
 }
 
-func buildSessionName(configName, startURL, region string) string {
-	base := configName
-	if base == "" {
-		base = "aws-sso-sync"
-	}
-	regionPart := region
-	if regionPart == "" {
-		regionPart = "region"
-	}
-	hostPart := "sso"
-	if parsed, err := url.Parse(strings.TrimSpace(startURL)); err == nil {
-		host := strings.TrimSpace(parsed.Hostname())
-		host = strings.TrimPrefix(host, "www.")
-		if host != "" {
-			hostPart = host
-		}
-	}
-	return sanitizeName(fmt.Sprintf("%s-%s-%s", base, regionPart, hostPart))
+func buildSessionName(baseName string) string {
+	return sanitizeName(baseName)
 }
 
 func replaceManagedBlock(content, startToken, endToken, replacement string) (string, map[string]profileMetadata, map[string]profileMetadata) {

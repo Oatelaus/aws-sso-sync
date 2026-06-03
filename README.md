@@ -169,6 +169,7 @@ Example (`~/.aws-sso-sync/configs/default.json`):
 ### Rule Fields
 
 - `name` (string): marker name used in managed block tokens
+- `ssoName` (string): optional variable for the sso-profile name; if not provided, it will match `name`.
 - `enabled` (bool): include/exclude rule file
 - `targetFile` (string): output file to patch (default: `~/.aws/config`)
 - `startUrl` (string): AWS SSO start URL
