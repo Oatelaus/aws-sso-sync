@@ -771,7 +771,7 @@ func collectSessions(profiles []renderedProfile) []renderedSession {
 }
 
 func buildSessionName(baseName string) string {
-	return sanitizeName(fmt.Sprintf("%s-%s-%s", baseName, "sso"))
+	return sanitizeName(baseName)
 }
 
 func replaceManagedBlock(content, startToken, endToken, replacement string) (string, map[string]profileMetadata, map[string]profileMetadata) {
