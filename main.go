@@ -332,8 +332,8 @@ func cmdLogs(appDir string) error {
 	}
 
 	start := 0
-	if len(recent) > 50 {
-		start = len(recent) - 50
+	if len(recent) > 500 {
+		start = len(recent) - 500
 	}
 
 	for _, rec := range recent[start:] {
